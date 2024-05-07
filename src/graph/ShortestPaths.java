@@ -141,7 +141,6 @@ public class ShortestPaths<VertexType extends Vertex<EdgeType>, EdgeType extends
      * starting vertex has been set.
      */
     public PathfindingSnapshot extendSearch(int maxToSettle) {
-        assert startId >= 0;
 
         // TODO A6.1a: Implement this method as specified using Dijkstra's algorithm (but settling
         //  no more than `maxToSettle` new vertices).  Make effective use of this class's fields,
@@ -149,6 +148,42 @@ public class ShortestPaths<VertexType extends Vertex<EdgeType>, EdgeType extends
         //  Note that the constructor parameters for the return type correlate closely with this
         //  class's fields (and the constructor guarantees copies are made, so you don't need to
         //  worry about "rep exposure" when sharing them).
-        throw new UnsupportedOperationException();  // Replace this line
+        assert startId >= 0;
+        assert maxToSettle >= 0;
+
+        int settledVertices = 0;
+
+        while (!frontier.isEmpty() && settledVertices < maxToSettle) {
+            int currentId = frontier.remove();
+
+            if (!settledIds.get(currentId)) {
+                // Mark this vertex as settled
+                settledIds.set(currentId);
+                settledVertices++;
+
+                exploreOutgoingEdges(currentId);
+            }
+        }
+
+        return new PathfindingSnapshot(startId, Arrays.copyOf(distances, distances.length),
+                Arrays.copyOf(predecessors, predecessors.length),
+                (BitSet) settledIds.clone());
+    }
+
+    //helper method
+    private void exploreOutgoingEdges(int currentId) {
+        for (EdgeType edge : graph.getVertex(currentId).outgoingEdges()) {
+            int targetId = edge.endId();
+            int weight = weigher.weight(edge);
+            int newDistance = distances[currentId] + weight;
+
+            if (distances[targetId] == -1 || newDistance < distances[targetId]) {
+                distances[targetId] = newDistance;
+                predecessors[targetId] = currentId;
+                if (!settledIds.get(targetId)) {
+                    frontier.addOrUpdate(targetId, newDistance);
+                }
+            }
+        }
     }
 }

@@ -15,6 +15,8 @@ import java.beans.PropertyChangeListener;
 import java.util.List;
 import java.util.ListIterator;
 import javax.swing.JComponent;
+import java.awt.Rectangle;
+import scissors.ImagePathsSnapshot;
 
 /**
  * A transparent (overlay) component enabling interactive selection (aka "tracing") of an underlying
@@ -130,8 +132,8 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
      */
     private void updateMouseLocation(Point p) {
         // Clamp `p`'s coordinates to be within the image bounds and save them in our field
-        mouseLocation.x = Math.clamp(p.x, 0, model.image().getWidth());
-        mouseLocation.y = Math.clamp(p.y, 0, model.image().getHeight());
+        mouseLocation.x = Math.clamp(p.x, 0, model.image().getWidth()-1);
+        mouseLocation.y = Math.clamp(p.y, 0, model.image().getHeight()-1) ;
 
         // Update the view to reflect the new mouse location
         repaint();
@@ -170,7 +172,47 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
         if (model.state() == SELECTED) {
             paintControlPoints(g, segments);
         }
+
+        // New in A6: Paint processing progress (if we recognize its type)
+        if (model.state() == PROCESSING) {
+            Object progress = model.getProcessingProgress();
+            if (progress instanceof ImagePathsSnapshot) {
+                paintPathfindingProgress(g, (ImagePathsSnapshot) progress);
+            }
+        }
     }
+
+
+
+
+    /**
+     * Shade image pixels according to their current path search status (settled, frontier, or
+     * undiscovered).  Do nothing if there is no pending path solution.
+     */
+    private void paintPathfindingProgress(Graphics g, ImagePathsSnapshot pendingPaths) {
+        int settledColor = new Color(192, 192, 96, 128).getRGB();
+        int frontierColor = new Color(96, 96, 192, 128).getRGB();
+
+        Rectangle bounds = g.getClipBounds();
+        int width = Math.min(bounds.width, model.image().getWidth() - bounds.x);
+        int height = Math.min(bounds.height, model.image().getHeight() - bounds.y);
+
+        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        for (int x = bounds.x; x < bounds.x + width; ++x) {
+            for (int y = bounds.y; y < bounds.y + height; ++y) {
+                Point p = new Point(x, y);
+                if (pendingPaths.settled(p)) {
+                    img.setRGB(x - bounds.x, y - bounds.y, settledColor);
+                } else if (pendingPaths.discovered(p)) {
+                    img.setRGB(x - bounds.x, y - bounds.y, frontierColor);
+                }
+            }
+        }
+        g.drawImage(img, bounds.x, bounds.y, null);
+    }
+
+
+
 
     /**
      * Draw on `g` along the selection path represented by `segments` using our selection perimeter

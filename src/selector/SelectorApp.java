@@ -15,6 +15,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import selector.SelectionModel.SelectionState;
+import scissors.ScissorsSelectionModel;
 
 /**
  * A graphical application for selecting and extracting regions of images.
@@ -46,6 +47,14 @@ public class SelectorApp implements PropertyChangeListener {
     private final JLabel statusLabel;
 
 
+    // New in A6
+    /**
+     * Progress bar to indicate the progress of a model that needs to do long calculations in a
+     * PROCESSING state.
+     */
+    private JProgressBar processingProgress;
+
+
     /**
      * Construct a new application instance.  Initializes GUI components, so must be invoked on the
      * Swing Event Dispatch Thread.  Does not show the application window (call `start()` to do
@@ -55,6 +64,9 @@ public class SelectorApp implements PropertyChangeListener {
         // Initialize application window
         frame = new JFrame("Selector");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        // New in A6: Add progress bar
+        processingProgress = new JProgressBar();
+        frame.add(processingProgress, BorderLayout.PAGE_START);
 
 
         // TODO 1A: Add `statusLabel` to the bottom of our window.  Stylistic alteration of the
@@ -137,19 +149,7 @@ public class SelectorApp implements PropertyChangeListener {
      * from constructor, as it initializes button fields.
      */
     private JPanel makeControlPanel() {
-        // TODO 3D: Create and return a panel containing the Cancel, Undo, Reset, and Finish
-        //  buttons (remember that these buttons are fields).  Activating the buttons should call
-        //  `cancelProcessing()`, `undo()`, `reset()`, and `finishSelection()` on the selection
-        //  model, respectively.  You may arrange and style the buttons however you like (so long as
-        //  they are usable); a vertical grid [2] is a good place to start.  See `makeMenuBar()`
-        //  above for inspiration.
-        //  The JPanel tutorial [1] shows how to set a layout manager and add components to a panel.
-        //  You are welcome to add borders, labels, and subpanels to improve its appearance.
-        //  The Visual Guide to Layout Managers [3] might give you other ideas for how to arrange
-        //  the buttons.
-        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/panel.html
-        //  [2] https://docs.oracle.com/javase/tutorial/uiswing/layout/grid.html
-        //  [3] https://docs.oracle.com/javase/tutorial/uiswing/layout/visual.html
+
 
 
         JPanel panel = new JPanel();
@@ -162,16 +162,56 @@ public class SelectorApp implements PropertyChangeListener {
         resetButton= new JButton("Reset");
         finishButton = new JButton("Finish");
 
+        String option1 = "PointToPointSelectionModel";
+        String option2 = "Intelligent scissors: gray";
+        String option3 = "Intelligent scissors: color";
+
+        String[] options = {option1,option2};
+
+        JComboBox<String> dropDown = new JComboBox<>(options);
+
+
         panel.add(cancelButton);
         panel.add(undoButton);
         panel.add(resetButton);
         panel.add(finishButton);
+        panel.add(dropDown);
 
         cancelButton.addActionListener(e -> model.cancelProcessing());
         undoButton.addActionListener(e -> model.undo());
 
         resetButton.addActionListener(e -> model.reset());
         finishButton.addActionListener(e -> model.finishSelection());
+
+
+
+        // TODO A6.0a: Add a widget to your control panel allowing the user to choose which
+        //  selection model to use.  We recommend using a `JComboBox` [1].  To start with, the user
+        //  should be able to choose between the following options:
+        //  1. Point-to-point (`PointToPointSelectionModel`).
+        //  2. Intelligent scissors: gray (`ScissorsSelectionModel` with a "CrossGradMono" weight
+        //     name).  You will need to `import scissors.ScissorsSelectionModel` to use this class.
+        //  When an item is selected, you should construct a new `SelectionModel` of the appropriate
+        //  class, passing the previous `model` object to the constructor so that any existing
+        //  selection is preserved.  Then you should call `setSelectionModel()` with your new model
+        //  object.
+        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html
+
+
+
+        dropDown.addActionListener(e -> {
+
+            JComboBox cb = (JComboBox) e.getSource();
+            String selectedOption = (String) cb.getSelectedItem();
+
+            if (selectedOption.equals(option1)){
+                SelectionModel newModel = new PointToPointSelectionModel(model);
+                setSelectionModel(newModel);
+            } else if (selectedOption.equals(option2)) {
+                SelectionModel newModel = new ScissorsSelectionModel("CrossGradColor",model);
+                setSelectionModel(newModel);}
+
+        });
 
 
 
@@ -197,6 +237,32 @@ public class SelectorApp implements PropertyChangeListener {
     public void propertyChange(PropertyChangeEvent evt) {
         if ("state".equals(evt.getPropertyName())) {
                 reflectSelectionState(model.state());
+        }
+
+        // TODO A6.0b: Update the progress bar [1] as follows:
+        //  * When the model transitions into the PROCESSING state, set the progress bar to
+        //    "indeterminate" mode.  That way, the user sees that something is happening even before
+        //    the model has an estimate of its progress.
+        //  * When the model transitions to any other state, ensure that the progress bar's value is
+        //    0 and that it is not in "indeterminate" mode.  The progress bar should look inert if
+        //    the model isn't currently processing.
+        //  * Upon receiving a "progress" property change, set the progress bar's value to the new
+        //    progress value (which will be an integer in [0..100]) and ensure it is not in
+        //    "indeterminate" mode.  You need to use the event object to get the new value.
+        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html
+
+        if(model.state().equals("PROCESSING")){
+            processingProgress.setIndeterminate(true);
+        }
+        else{
+            processingProgress.setValue(0);
+            processingProgress.setIndeterminate(false);
+        }
+
+        if ("progress".equals(evt.getPropertyName())) {
+            processingProgress.setIndeterminate(false);
+            int newProgress = (Integer) evt.getNewValue();
+            processingProgress.setValue(newProgress);
         }
     }
 
@@ -245,6 +311,7 @@ public class SelectorApp implements PropertyChangeListener {
         imgPanel.setSelectionModel(newModel);
         model = imgPanel.selection();
         model.addPropertyChangeListener("state", this);
+        model.addPropertyChangeListener("progress", this);
 
         // Since the new model's initial state may be different from the old model's state, manually
         //  trigger an update to our state-dependent view.

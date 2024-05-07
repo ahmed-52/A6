@@ -3,6 +3,7 @@ package graph;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.LinkedList;
 import java.util.List;
 
 public class PathfindingSnapshot {
@@ -58,7 +59,17 @@ public class PathfindingSnapshot {
     public List<Integer> pathTo(int dstId) {
         // TODO A6.1b: Implement this method as specified (hint: remember that reconstructing paths
         //  from back pointers was a lecture exercise).
-        throw new UnsupportedOperationException();  // Replace this line
+        if (settledIds.get(dstId) || distances[dstId] == -1) {
+            List<Integer> path = new LinkedList<>();
+            path.add(dstId);
+            while (predecessors[dstId] != -1) {
+                dstId = predecessors[dstId];
+                path.add(0, dstId); // Adding at index 0 to maintain order
+            }
+            return path;
+        } else {
+            throw new IllegalArgumentException();
+        }
     }
 
     /**
@@ -93,3 +104,4 @@ public class PathfindingSnapshot {
         return settledIds.get(id);
     }
 }
+
