@@ -182,7 +182,13 @@ public class ScissorsSelectionModel extends SelectionModel {
         //  4. Call `findPaths()` to start a new shortest-paths solve from our selection's new
         //     endpoint.
         //  Hint: The `ImageGraph` class provides methods that might help with steps 1 and 3.
-        throw new UnsupportedOperationException();  // Replace this line
+
+        int vertexId = graph.idAt(p);
+        List<Integer> path = paths.pathTo(vertexId);
+        PolyLine newSegment = graph.pathToPolyLine(path);
+        selection.addLast(newSegment);
+        findPaths(vertexId);
+
     }
 
     /**
@@ -252,7 +258,14 @@ public class ScissorsSelectionModel extends SelectionModel {
         //  2. Construct the shortest path to this vertex based on our last pathfinding results.
         //  3. Convert that path from a sequence of vertices to a `PolyLine`
         //  Hint: The `ImageGraph` class provides methods that might help with steps 1 and 3.
-        throw new UnsupportedOperationException();  // Replace this line
+
+        int vertexId = graph.idAt(p);
+
+
+        List<Integer> path = paths.pathTo(vertexId);
+        return graph.pathToPolyLine(path);
+
+
     }
 
     /**
@@ -337,7 +350,19 @@ public class ScissorsSelectionModel extends SelectionModel {
             //  References:
             //  [1] https://docs.oracle.com/javase/tutorial/uiswing/concurrency/worker.html
             //  [2] https://docs.oracle.com/en/java/javase/21/docs/api/java.desktop/javax/swing/SwingWorker.html#isCancelled()
-            throw new UnsupportedOperationException();  // Replace this line
+
+            while (!pathfinder.allPathsFound()) {
+                if (isCancelled()) {
+                    return null;
+                }
+                PathfindingSnapshot snapshot = pathfinder.extendSearch(10000);
+                int settledCount = pathfinder.settledCount();
+                int vertexCount = pathfinder.vertexCount();
+                int progress = (int) ((double) settledCount / vertexCount * 100);
+                setProgress(progress);
+                publish(snapshot); // publish to send the snapshot to the process method
+            }
+            return pathfinder.extendSearch(0);
         }
 
         /**
@@ -384,7 +409,37 @@ public class ScissorsSelectionModel extends SelectionModel {
             //     model's invariant regarding `worker`, set its worker to `null`.
             //  Since this is guaranteed to execute on the EDT, it is safe to access any members of
             //  our outer model object.
-            throw new UnsupportedOperationException();  // Replace this line
+
+            if (worker != this) {
+                return;
+            }
+            try {
+                paths = get();
+                if (previousState == NO_SELECTION) {
+                    setState(SELECTING);
+                } else {
+                    setState(previousState);
+                }
+            } catch (InterruptedException e) {
+                    // ignore
+                } catch (CancellationException e) {
+                        if (previousState == SELECTING) {
+                        undoPoint();
+                        }
+            } catch (ExecutionException e) {
+
+                throw new RuntimeException(e.getCause());
+            } finally {
+                worker = null;
+            }
+
+
+
+
+
+
+
+
         }
     }
 }

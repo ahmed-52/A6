@@ -251,7 +251,7 @@ public class SelectorApp implements PropertyChangeListener {
         //    "indeterminate" mode.  You need to use the event object to get the new value.
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html
 
-        if(model.state().equals("PROCESSING")){
+        if(model.state().equals("PROCESSING")){ // TODOOO check if its right
             processingProgress.setIndeterminate(true);
         }
         else{

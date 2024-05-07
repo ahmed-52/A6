@@ -148,6 +148,8 @@ public class ShortestPaths<VertexType extends Vertex<EdgeType>, EdgeType extends
         //  Note that the constructor parameters for the return type correlate closely with this
         //  class's fields (and the constructor guarantees copies are made, so you don't need to
         //  worry about "rep exposure" when sharing them).
+
+
         assert startId >= 0;
         assert maxToSettle >= 0;
 
