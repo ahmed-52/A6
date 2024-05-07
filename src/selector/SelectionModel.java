@@ -9,6 +9,7 @@ import java.awt.Point;
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
@@ -183,12 +184,17 @@ public abstract class SelectionModel {
             throw new IllegalStateException(
                     "Cannot query last point when not selection has been started");
         }
+
+
         // TODO 2A: If there are no segments currently in the selection path, return the starting
         //  point.  Otherwise, return the endpoint of the last segment of the current selection
         //  path.
         //  Test immediately with `testStart()` (also covered by `testAppend()` after
         //  implementing `appendToSelection()`).
-        throw new UnsupportedOperationException();  // Replace this line
+        if (selection.isEmpty()) return start;
+
+        return selection.getLast().end();
+
     }
 
     /**
@@ -249,23 +255,44 @@ public abstract class SelectionModel {
      * selection is not yet finished.
      */
     public int closestPoint(Point p, int maxDistanceSq) {
-        if (state != SELECTED) {
-            throw new IllegalStateException(
-                    "Cannot query closest point when selection is incomplete");
+//        assert state == SELECTED; came with code, commented out because statement below will
+//        always be false, violationg the `Throws an IllegalStateException if our
+//     * selection is not yet finished`
+
+        if(state != SELECTED){throw new IllegalStateException();}
+
+        int index = -1;
+        int small = Integer.MAX_VALUE;
+
+        int i = 0;
+        for(PolyLine line:selection){
+//
+            int dx = p.x - line.start().x;
+            int dy = p.y - line.start().y;
+            int distance = dx * dx + dy * dy;
+            if (distance <= maxDistanceSq){
+                if(distance < small){
+                    small = distance;
+                    index = i;
+                }
+            }
+            i++;
         }
 
-        // TODO 4D: Implement as specified.  Note that the argument is the _square_ of the maximum
+        // TODO 3H: Implement as specified.  Note that the argument is the _square_ of the maximum
         //  distance; you can take advantage of this to avoid doing any floating-point math.
         //  Test immediately with the provided `testClosestPoint*()` cases, and add additional tests
         //  per the corresponding task in the test suite (consider writing the tests first).
         //  Note that, by this indexing convention, the index of `start` is 0.
-        throw new UnsupportedOperationException();  // Replace this line
+
+        return index;
+
     }
 
     /**
-     * Move the starting point of the segment of the selection with index `index` to `newPos`,
-     * updating the path of that segment and the next segment (wrapping around) to keep the
-     * selection continuous.
+     * Move the end point of the segment of the selection with index `index` to `newPos`, updating
+     * the path of that segment and the next segment (wrapping around) to keep the selection
+     * continuous.
      */
     public abstract void movePoint(int index, Point newPos);
 
@@ -339,7 +366,13 @@ public abstract class SelectionModel {
             //  by the `selection()` observer to minimize rep exposure).
             //  Test immediately with `testUndoSelected()`, and add additional tests per the
             //  corresponding task in the test suite (consider writing the tests first).
-            throw new UnsupportedOperationException();  // Replace this line
+            selection.removeLast();
+            if (state == SELECTED){
+                setState(SELECTING);
+                propSupport.firePropertyChange("selection",null,selection());
+
+            }
+
         }
     }
 

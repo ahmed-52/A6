@@ -3,6 +3,8 @@ package selector;
 import static selector.SelectionModel.SelectionState.*;
 
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
@@ -12,7 +14,6 @@ import java.io.*;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.filechooser.FileNameExtensionFilter;
-import scissors.ScissorsSelectionModel;
 import selector.SelectionModel.SelectionState;
 
 /**
@@ -44,12 +45,6 @@ public class SelectorApp implements PropertyChangeListener {
     private JButton finishButton;
     private final JLabel statusLabel;
 
-    // New in A6
-    /**
-     * Progress bar to indicate the progress of a model that needs to do long calculations in a
-     * PROCESSING state.
-     */
-    private JProgressBar processingProgress;
 
     /**
      * Construct a new application instance.  Initializes GUI components, so must be invoked on the
@@ -61,32 +56,39 @@ public class SelectorApp implements PropertyChangeListener {
         frame = new JFrame("Selector");
         frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 
-        // Add status bar
-        statusLabel = new JLabel();
-        // TODO A5.1A: Add `statusLabel` to the bottom of our window.  Stylistic alteration of the
+
+        // TODO 1A: Add `statusLabel` to the bottom of our window.  Stylistic alteration of the
         //  label (i.e., custom fonts and colors) is allowed.
         //  See the BorderLayout tutorial [1] for example code that you can adapt.
         //  [1]: https://docs.oracle.com/javase/tutorial/uiswing/layout/border.html
 
+        // Add status bar 1A
+        statusLabel = new JLabel("NO SELECTION");
+        frame.add(statusLabel,BorderLayout.PAGE_END);
+
+
         // Add image component with scrollbars
         imgPanel = new ImagePanel();
-        // TODO A5.1B: Replace the following line with code to put scroll bars around `imgPanel` while
+
+        // TODO 1B: Replace the following line with code to put scroll bars around `imgPanel` while
         //  otherwise keeping it in the center of our window.  The scroll pane should also be given
         //  a moderately large preferred size (e.g., between 400 and 700 pixels wide and tall).
         //  The Swing Tutorial has lots of info on scrolling [1], but for this task you only need
         //  the basics from lecture.
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/scrollpane.html
-        frame.add(imgPanel);  // Replace this line
-
-        // New in A6: Add progress bar
-        processingProgress = new JProgressBar();
-        frame.add(processingProgress, BorderLayout.PAGE_START);
+        frame.add(imgPanel,BorderLayout.CENTER);  // Replace this line
+        JScrollPane scrollPane = new JScrollPane(imgPanel);
+        scrollPane.setPreferredSize(new Dimension(500,500));
+        frame.add(scrollPane,BorderLayout.CENTER);
 
         // Add menu bar
         frame.setJMenuBar(makeMenuBar());
 
         // Add control buttons
-        // TODO A5.3E: Call `makeControlPanel()`, then add the result to the window next to the image.
+        // TODO 3E: Call `makeControlPanel()`, then add the result to the window next to the image.
+        JPanel panel = makeControlPanel();
+        frame.add(panel,BorderLayout.EAST);
+
 
         // Controller: Set initial selection tool and update components to reflect its state
         setSelectionModel(new PointToPointSelectionModel(true));
@@ -117,7 +119,7 @@ public class SelectorApp implements PropertyChangeListener {
         undoItem = new JMenuItem("Undo");
         editMenu.add(undoItem);
 
-        // TODO (A5 embellishment): Assign keyboard shortcuts to menu items [1].  (1 point)
+        // TODO (embellishment): Assign keyboard shortcuts to menu items [1].  (1 point)
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/menu.html#mnemonic
 
         // Controller: Attach menu item listeners
@@ -135,22 +137,7 @@ public class SelectorApp implements PropertyChangeListener {
      * from constructor, as it initializes button fields.
      */
     private JPanel makeControlPanel() {
-
-        // TODO A6.0a: Add a widget to your control panel allowing the user to choose which
-        //  selection model to use.  We recommend using a `JComboBox` [1].  To start with, the user
-        //  should be able to choose between the following options:
-        //  1. Point-to-point (`PointToPointSelectionModel`).
-        //  2. Intelligent scissors: gray (`ScissorsSelectionModel` with a "CrossGradMono" weight
-        //     name).  You will need to `import scissors.ScissorsSelectionModel` to use this class.
-        //  When an item is selected, you should construct a new `SelectionModel` of the appropriate
-        //  class, passing the previous `model` object to the constructor so that any existing
-        //  selection is preserved.  Then you should call `setSelectionModel()` with your new model
-        //  object.
-        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html
-        // TODO A6.4d: Add a new option to your tool selection widget so that users can try out your
-        //  new color-aware weight function.
-
-        // TODO A5.3D: Create and return a panel containing the Cancel, Undo, Reset, and Finish
+        // TODO 3D: Create and return a panel containing the Cancel, Undo, Reset, and Finish
         //  buttons (remember that these buttons are fields).  Activating the buttons should call
         //  `cancelProcessing()`, `undo()`, `reset()`, and `finishSelection()` on the selection
         //  model, respectively.  You may arrange and style the buttons however you like (so long as
@@ -163,7 +150,33 @@ public class SelectorApp implements PropertyChangeListener {
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/panel.html
         //  [2] https://docs.oracle.com/javase/tutorial/uiswing/layout/grid.html
         //  [3] https://docs.oracle.com/javase/tutorial/uiswing/layout/visual.html
-        throw new UnsupportedOperationException();  // Replace this line
+
+
+        JPanel panel = new JPanel();
+        GridLayout grid = new GridLayout(4,1);
+        panel.setLayout(grid);
+
+
+        cancelButton = new JButton("Cancel");
+        undoButton= new JButton("Undo");
+        resetButton= new JButton("Reset");
+        finishButton = new JButton("Finish");
+
+        panel.add(cancelButton);
+        panel.add(undoButton);
+        panel.add(resetButton);
+        panel.add(finishButton);
+
+        cancelButton.addActionListener(e -> model.cancelProcessing());
+        undoButton.addActionListener(e -> model.undo());
+
+        resetButton.addActionListener(e -> model.reset());
+        finishButton.addActionListener(e -> model.finishSelection());
+
+
+
+        // not printing the errors to the console log
+        return panel;
     }
 
     /**
@@ -177,25 +190,13 @@ public class SelectorApp implements PropertyChangeListener {
     }
 
     /**
-     * React to property changes in an observed model.  Supported properties include: * "state":
-     * Update components to reflect the new selection state. * "progress": Update the processing
-     * progress bar.
+     * React to property changes in an observed model.  Supported properties include:
+     * * "state": Update components to reflect the new selection state.
      */
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
-        // TODO A6.0b: Update the progress bar [1] as follows:
-        //  * When the model transitions into the PROCESSING state, set the progress bar to
-        //    "indeterminate" mode.  That way, the user sees that something is happening even before
-        //    the model has an estimate of its progress.
-        //  * When the model transitions to any other state, ensure that the progress bar's value is
-        //    0 and that it is not in "indeterminate" mode.  The progress bar should look inert if
-        //    the model isn't currently processing.
-        //  * Upon receiving a "progress" property change, set the progress bar's value to the new
-        //    progress value (which will be an integer in [0..100]) and ensure it is not in
-        //    "indeterminate" mode.  You need to use the event object to get the new value.
-        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/progress.html
         if ("state".equals(evt.getPropertyName())) {
-            reflectSelectionState(model.state());
+                reflectSelectionState(model.state());
         }
     }
 
@@ -207,7 +208,14 @@ public class SelectorApp implements PropertyChangeListener {
         // Update status bar to show current state
         statusLabel.setText(state.toString());
 
-        // TODO A5.3F: Enable/disable components (both buttons and menu items) as follows:
+        cancelButton.setEnabled(state == PROCESSING);
+        undoButton.setEnabled(state != NO_SELECTION);
+        resetButton.setEnabled(state != NO_SELECTION);
+        finishButton.setEnabled(state == SELECTING);
+        saveItem.setEnabled(state == SELECTED);
+
+
+        // TODO 3F: Enable/disable components (both buttons and menu items) as follows:
         //  * Cancel is only allowed when the selection is processing
         //  * Undo and Reset are not allowed when there is no selection (pending or complete)
         //  * Finish is only allowed when selecting
@@ -238,9 +246,6 @@ public class SelectorApp implements PropertyChangeListener {
         model = imgPanel.selection();
         model.addPropertyChangeListener("state", this);
 
-        // New in A6: Listen for "progress" events
-        model.addPropertyChangeListener("progress", this);
-
         // Since the new model's initial state may be different from the old model's state, manually
         //  trigger an update to our state-dependent view.
         reflectSelectionState(model.state());
@@ -267,7 +272,9 @@ public class SelectorApp implements PropertyChangeListener {
         chooser.setFileFilter(new FileNameExtensionFilter("Image files",
                 ImageIO.getReaderFileSuffixes()));
 
-        // TODO A5.1C: Complete this method as specified by performing the following tasks:
+
+
+        // TODO 1C: Complete this method as specified by performing the following tasks:
         //  * Show an "open file" dialog using the above chooser [1].
         //  * If the user selects a file, read it into a BufferedImage [2], then set that as the
         //    current image (by calling `this.setImage()`).
@@ -276,14 +283,29 @@ public class SelectorApp implements PropertyChangeListener {
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/filechooser.html
         //  [2] https://docs.oracle.com/javase/tutorial/2d/images/loadimage.html
         //  [3] https://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html
-        // TODO (A5 embellishment): After a problem, re-show the open dialog.  By reusing the same
+        // TODO (embellishment): After a problem, re-show the open dialog.  By reusing the same
         //  chooser, the dialog will show the same directory as before the problem. (1 point)
-        throw new UnsupportedOperationException();  // Replace this line
+
+
+        try {
+            int returnVal = chooser.showOpenDialog(frame);
+            File file = chooser.getSelectedFile();
+            BufferedImage img = ImageIO.read(file);
+            this.setImage(img);
+        }
+        catch (Exception e) {
+            JOptionPane.showMessageDialog(frame, "Unable to open image file, try again",
+                    "Unsupported Type",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+
+
+
     }
 
     /**
-     * Save the selected region of the current image to a file selected from a "save" dialog. Show
-     * an error message dialog if the image could not be saved.
+     * Save the selected region of the current image to a file selected from a "save" dialog.
+     * Show an error message dialog if the image could not be saved.
      */
     private void saveSelection() {
         JFileChooser chooser = new JFileChooser();
@@ -292,20 +314,58 @@ public class SelectorApp implements PropertyChangeListener {
         // We always save in PNG format, so only show existing PNG files
         chooser.setFileFilter(new FileNameExtensionFilter("PNG images", "png"));
 
-        // TODO A5.3G: Complete this method as specified by performing the following tasks:
+        // TODO 3G: Complete this method as specified by performing the following tasks:
         //  * Show a "save file" dialog using the above chooser [1].
         //  * If the user selects a file, write an image containing the selected pixels to the file.
         //  * If a problem occurs when opening or writing to the file, show an error dialog with the
         //    class of the exception as its title and the exception's message as its text [2].
         //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/filechooser.html
         //  [2] https://docs.oracle.com/javase/tutorial/uiswing/components/dialog.html
-        // TODO (A5 embellishment):
-        //  * If the selected filename does not end in ".png", append that extension. (1 point)
-        //  * Prompt with a yes/no/cancel dialog before overwriting a file. (1 point)
+        // TODO (embellishment):
+        //  * If the selected filename does not end in ".png", append that extension. (1 point) DONE!
+        //  * Prompt with a yes/no/cancel dialog before overwriting a file. (1 point) DONE!
         //  * After an IOException, or after user selects "No" (instead of "Cancel") when prompted,
         //    re-show the save dialog.  By reusing the same chooser, the dialog will show the same
         //    directory as before the problem. (1 point)
-        throw new UnsupportedOperationException();  // Replace this line
+        chooser.showSaveDialog(frame);
+        File file = chooser.getSelectedFile();
+
+        if (!file.getName().toLowerCase().endsWith(".png")) {
+            file = new File(file.getParentFile(), file.getName() + ".png");
+        }
+
+
+        if (file.exists()) {
+            int confirm = JOptionPane.showConfirmDialog(
+                    frame,
+                    "The file already exists. Do you want to overwrite it?",
+                    "Overwrite File?",
+                    JOptionPane.YES_NO_CANCEL_OPTION,
+                    JOptionPane.WARNING_MESSAGE
+            );
+            if (confirm != JOptionPane.YES_OPTION) {
+                if (confirm == JOptionPane.NO_OPTION) {
+                    saveSelection();
+                }
+                return;
+            }
+        }
+
+
+        try{
+            OutputStream out = new FileOutputStream(file);
+            model.saveSelection(out);
+
+        } catch (Exception e){
+            JOptionPane.showMessageDialog(
+                    frame,
+                    "Failed to save the image: " + e.getMessage(),
+                    "Error",
+                    JOptionPane.ERROR_MESSAGE
+            );
+
+//            System.out.println(e.getMessage());
+        }
     }
 
     /**

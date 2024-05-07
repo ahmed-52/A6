@@ -5,20 +5,16 @@ import static selector.SelectionModel.SelectionState.*;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.Point;
-import java.awt.Polygon;
-import java.awt.Rectangle;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.geom.Area;
 import java.awt.image.BufferedImage;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.util.List;
+import java.util.ListIterator;
 import javax.swing.JComponent;
-import scissors.ImagePathsSnapshot;
 
 /**
  * A transparent (overlay) component enabling interactive selection (aka "tracing") of an underlying
@@ -133,10 +129,9 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
      * it after this method returns, which Swing will do with Points used by MouseEvents).
      */
     private void updateMouseLocation(Point p) {
-        // New in A6: Fixed bug
         // Clamp `p`'s coordinates to be within the image bounds and save them in our field
-        mouseLocation.x = Math.clamp(p.x, 0, model.image().getWidth() - 1);
-        mouseLocation.y = Math.clamp(p.y, 0, model.image().getHeight() - 1);
+        mouseLocation.x = Math.clamp(p.x, 0, model.image().getWidth());
+        mouseLocation.y = Math.clamp(p.y, 0, model.image().getHeight());
 
         // Update the view to reflect the new mouse location
         repaint();
@@ -157,9 +152,9 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
     public void paintComponent(Graphics g) {
         List<PolyLine> segments = model.selection();
 
-
         // Draw perimeter
         paintSelectionPerimeter(g, segments);
+
 
         // If dragging a point, draw guide lines
         if (isInteractingWithPoint() && mouseLocation != null) {
@@ -175,22 +170,31 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
         if (model.state() == SELECTED) {
             paintControlPoints(g, segments);
         }
-
-        // New in A6: Paint processing progress (if we recognize its type)
-        if (model.state() == PROCESSING) {
-            Object progress = model.getProcessingProgress();
-            if (progress instanceof ImagePathsSnapshot) {
-                paintPathfindingProgress(g, (ImagePathsSnapshot) progress);
-            }
-        }
     }
-
 
     /**
      * Draw on `g` along the selection path represented by `segments` using our selection perimeter
      * color.
      */
     private void paintSelectionPerimeter(Graphics g, List<PolyLine> segments) {
+
+        g.setColor(selectionPerimeterColor);
+        for (PolyLine segment: segments) {
+            Point point1 = segment.start();
+            Point point2 = segment.end();
+
+            int x1 = point1.x;
+            int y1 = point1.y;
+            int x2 = point2.x;
+            int y2 = point2.y;
+            g.drawLine(x1,y1,x2,y2);
+
+
+
+
+
+        }
+
         // TODO 3B: Implement this method as specified.
         //  The Graphics API documentation [1] is essential to finding appropriate methods to draw
         //  the segments and control their color.
@@ -204,6 +208,21 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
     private void paintLiveWire(Graphics g) {
         // TODO 3C: Implement this method as specified.  The same Graphics methods you used in
         //  `paintSelectionPerimeter()` are relevant here.
+
+        g.setColor(liveWireColor);
+        PolyLine line = model.liveWire(mouseLocation);
+
+
+        Point point1 = line.start();
+        Point point2 = line.end();
+
+
+        int x1 = point1.x;
+        int y1 = point1.y;
+        int x2 = point2.x;
+        int y2 = point2.y;
+
+        g.drawLine(x1,y1,x2,y2);
     }
 
     /**
@@ -214,43 +233,55 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
     private void paintControlPoints(Graphics g, List<PolyLine> segments) {
         // TODO 4A: Implement this method as specified.  Pay careful attention to the arguments
         //  expected by your chosen Graphics API call.
+
+        g.setColor(controlPointColor);
+
+        for (PolyLine line :segments){
+
+            Point point = line.start();
+            g.fillOval(point.x-controlPointRadius,point.y-controlPointRadius,
+                    controlPointRadius*2,controlPointRadius*2);
+            point = line.end();
+            g.fillOval(point.x-controlPointRadius,point.y-controlPointRadius,
+                    controlPointRadius*2,controlPointRadius*2);
+        }
+
+
     }
 
     /**
      * Draw straight lines on `g` connecting our last-known mouse pointer location to the control
-     * points before and after our selected point using our live wire color.  Requires
-     * `selectedIndex` is in [0..segments.size()).
+     * points before and after our selected point.  Requires `selectedIndex` is in
+     * [0..segments.size()).
      */
     private void paintMoveGuides(Graphics g, List<PolyLine> segments) {
         // TODO 4G: Implement this method as specified.
-    }
-
-    // New in A6
-    /**
-     * Shade image pixels according to their current path search status (settled, frontier, or
-     * undiscovered).  Do nothing if there is no pending path solution.
-     */
-    private void paintPathfindingProgress(Graphics g, ImagePathsSnapshot pendingPaths) {
-        int settledColor = new Color(192, 192, 96, 128).getRGB();
-        int frontierColor = new Color(96, 96, 192, 128).getRGB();
-
-        Rectangle bounds = g.getClipBounds();
-        int width = Math.min(bounds.width, model.image().getWidth() - bounds.x);
-        int height = Math.min(bounds.height, model.image().getHeight() - bounds.y);
-
-        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-        for (int x = bounds.x; x < bounds.x + width; ++x) {
-            for (int y = bounds.y; y < bounds.y + height; ++y) {
-                Point p = new Point(x, y);
-                if (pendingPaths.settled(p)) {
-                    img.setRGB(x - bounds.x, y - bounds.y, settledColor);
-                } else if (pendingPaths.discovered(p)) {
-                    img.setRGB(x - bounds.x, y - bounds.y, frontierColor);
-                }
-            }
+        if (selectedIndex < 0 || selectedIndex >= segments.size()) {
+            return;
         }
-        g.drawImage(img, bounds.x, bounds.y, null);
+
+        if (isInteractingWithPoint()) {
+            g.setColor(liveWireColor);
+
+
+            int precedingIndex = selectedIndex == 0 ? segments.size() - 1 : (selectedIndex - 1);
+            int followingIndex = selectedIndex == (segments.size() - 1) ? 0 : (selectedIndex + 1);
+
+
+            PolyLine precedingSegment = segments.get(precedingIndex);
+            PolyLine followingSegment = segments.get(followingIndex);
+
+
+            Point precedingPoint = precedingSegment.start();
+            Point followingPoint = followingSegment.end();
+
+
+            g.drawLine(precedingPoint.x, precedingPoint.y, mouseLocation.x, mouseLocation.y);
+
+            g.drawLine(mouseLocation.x, mouseLocation.y, followingPoint.x, followingPoint.y);
+        }
     }
+
 
     /* Event listeners */
 
@@ -266,13 +297,27 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
      */
     @Override
     public void mouseClicked(MouseEvent e) {
-        updateMouseLocation(e.getPoint());
+        updateMouseLocation(e.getPoint());  // Always update the mouse location first
 
-        // TODO 3A: Implement this method as specified.
-        //  The MouseListener [1] and MouseMotionListener [2] tutorials may be helpful.
-        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/events/mouselistener.html
-        //  [2] https://docs.oracle.com/javase/tutorial/uiswing/events/mousemotionlistener.html
+        // Handle actions based on mouse button and selection state
+        if (e.getButton() == MouseEvent.BUTTON1) {
+
+            if (model.state() == SELECTING || model.state() == NO_SELECTION) {
+                model.addPoint(e.getPoint());
+            }
+        } else if (e.getButton() == MouseEvent.BUTTON2) {
+
+            if (model.state() == SELECTING) {
+                model.finishSelection();
+            }
+        } else if (e.getButton() == MouseEvent.BUTTON3) {
+
+            if (model.state() == SELECTING || model.state() == SELECTED) {
+                model.undo();
+            }
+        }
     }
+
 
     /**
      * When a selection is in progress, update our last-observed mouse location to the location of
@@ -304,8 +349,23 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
      */
     @Override
     public void mousePressed(MouseEvent e) {
+
         // TODO 4F: Implement this method as specified.  Recall that the `selectedIndex` field is
         //  used to remember which control point a user is currently interacting with.
+
+
+        if(e.getButton() == MouseEvent.BUTTON1){
+            if(model.state() == SELECTED){
+                int maxDistanceSq = controlPointRadius * controlPointRadius;
+                Point clickPoint = e.getPoint();
+                int closestIndex = model.closestPoint(clickPoint, maxDistanceSq);
+                if (closestIndex != -1) { // Valid control point found within the threshold
+                    selectedIndex = closestIndex; // Select this control point
+                } else {
+                    selectedIndex = -1; // No control point is close enough, reset the selected index
+                }
+            }
+        }
     }
 
     /**

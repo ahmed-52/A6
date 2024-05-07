@@ -21,11 +21,14 @@ public class PointToPointSelectionModel extends SelectionModel {
      */
     @Override
     public PolyLine liveWire(Point p) {
+
+        PolyLine line = new PolyLine(lastPoint(),p);
+        return line;
         // TODO 2B: Implement this method as specified by constructing and returning a new PolyLine
         //  representing the desired line segment.  This can be done with one statement.
         //  Test immediately with `testLiveWireEmpty()`, and think about how the test might change
         //  for non-empty selections (see task 2D).
-        throw new UnsupportedOperationException();  // Replace this line
+
     }
 
     /**
@@ -38,7 +41,7 @@ public class PointToPointSelectionModel extends SelectionModel {
         //  to the current selection path.  This can be done with one statement, similar to
         //  `liveWire()` above.
         //  Test immediately with `testAppend()` and `testFinishSelection()`.
-        throw new UnsupportedOperationException();  // Replace this line
+        selection.add(new PolyLine(lastPoint(),p));
     }
 
     /**
@@ -71,6 +74,46 @@ public class PointToPointSelectionModel extends SelectionModel {
         //  for examples).
         //  Test immediately with `testMovePointMiddle()`, and add additional tests per the
         //  corresponding task in the test suite (strongly consider writing the tests first).
-        throw new UnsupportedOperationException();  // Replace this line
+
+
+        ListIterator<PolyLine> iterSelection = selection.listIterator();
+
+
+        while(iterSelection.hasNext()){
+            int currentIndex = iterSelection.nextIndex();
+            PolyLine current = iterSelection.next();
+
+
+            if(currentIndex == index){
+                PolyLine newLine = new PolyLine(newPos,current.end());
+
+                iterSelection.set(newLine);
+
+                if(currentIndex > 0 ){
+                    iterSelection.previous();
+                    PolyLine previous = iterSelection.previous();
+                    PolyLine newLine2 = new PolyLine(previous.start(),newPos);
+                    iterSelection.set(newLine2);
+                }
+
+                break;
+            }
+
+
+        }
+
+        if(index == 0 && !selection.isEmpty()){
+            iterSelection = selection.listIterator(selection.size()-1);
+            PolyLine lastSegment = iterSelection.next();
+            PolyLine newLastSegment = new PolyLine(lastSegment.start(),newPos);
+            iterSelection.set(newLastSegment);
+            start = newPos;
+        }
+
+        propSupport.firePropertyChange("selection",null,selection());
+
+
+
+
     }
 }
