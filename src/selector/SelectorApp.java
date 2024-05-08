@@ -208,7 +208,7 @@ public class SelectorApp implements PropertyChangeListener {
                 SelectionModel newModel = new PointToPointSelectionModel(model);
                 setSelectionModel(newModel);
             } else if (selectedOption.equals(option2)) {
-                SelectionModel newModel = new ScissorsSelectionModel("CrossGradColor",model);
+                SelectionModel newModel = new ScissorsSelectionModel("CrossGradMono",model);
                 setSelectionModel(newModel);}
 
         });

@@ -45,4 +45,5 @@ interface MinQueue<KeyType> {
      * Remove all elements from this queue (making it empty).
      */
     void clear();
+
 }

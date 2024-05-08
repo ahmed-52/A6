@@ -221,20 +221,16 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
     private void paintSelectionPerimeter(Graphics g, List<PolyLine> segments) {
 
         g.setColor(selectionPerimeterColor);
-        for (PolyLine segment: segments) {
-            Point point1 = segment.start();
-            Point point2 = segment.end();
+//        for (PolyLine segment: segments) {
+//            Point start = segment.start();
+//            Point end = segment.end();
+//            int[] xPoints = {start.x, end.x};
+//            int[] yPoints = {start.y, end.y};
+//            g.drawPolyline(xPoints, yPoints, 2);
+//        }
 
-            int x1 = point1.x;
-            int y1 = point1.y;
-            int x2 = point2.x;
-            int y2 = point2.y;
-            g.drawLine(x1,y1,x2,y2);
-
-
-
-
-
+        for (PolyLine segment : segments){
+            g.drawPolyline(segment.xs(),segment.ys(),segment.size());
         }
 
         // TODO 3B: Implement this method as specified.
@@ -248,23 +244,26 @@ public class SelectionComponent extends JComponent implements MouseListener, Mou
      * our live wire color.
      */
     private void paintLiveWire(Graphics g) {
-        // TODO 3C: Implement this method as specified.  The same Graphics methods you used in
-        //  `paintSelectionPerimeter()` are relevant here.
+
 
         g.setColor(liveWireColor);
-        PolyLine line = model.liveWire(mouseLocation);
+//        PolyLine line = model.liveWire(mouseLocation);
+//        Point start = line.start();
+//        Point end = line.end();
+//        int[] xPoints = {start.x, end.x};
+//        int[] yPoints = {start.y, end.y};
+//        g.drawPolyline(xPoints, yPoints, 2);
+
+        if(model.state()==SELECTING && mouseLocation != null){
+            PolyLine liveWirePath = model.liveWire(mouseLocation);
+            int[] xPoints = liveWirePath.xs();
+            int[] yPoints = liveWirePath.ys();
+            int nPoints = liveWirePath.size();
+
+            g.drawPolyline(xPoints, yPoints, nPoints);
+        }
 
 
-        Point point1 = line.start();
-        Point point2 = line.end();
-
-
-        int x1 = point1.x;
-        int y1 = point1.y;
-        int x2 = point2.x;
-        int y2 = point2.y;
-
-        g.drawLine(x1,y1,x2,y2);
     }
 
     /**

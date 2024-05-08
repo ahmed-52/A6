@@ -64,7 +64,7 @@ public class ShortestPaths<VertexType extends Vertex<EdgeType>, EdgeType extends
         settledIds = new BitSet(graph.vertexCount());
 
         // TODO A6.3f: Replace this with a `HeapMinQueue` after implementing and testing the latter.
-        frontier = new RefMinQueue<>();
+        frontier = new HeapMinQueue<>();
 
         reset();
     }
@@ -177,7 +177,10 @@ public class ShortestPaths<VertexType extends Vertex<EdgeType>, EdgeType extends
         for (EdgeType edge : graph.getVertex(currentId).outgoingEdges()) {
             int targetId = edge.endId();
             int weight = weigher.weight(edge);
+//            System.out.println("Edge from " + currentId + " to " + targetId + " has weight " + weight);
+
             int newDistance = distances[currentId] + weight;
+
 
             if (distances[targetId] == -1 || newDistance < distances[targetId]) {
                 distances[targetId] = newDistance;

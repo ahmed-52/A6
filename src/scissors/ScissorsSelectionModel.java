@@ -185,9 +185,15 @@ public class ScissorsSelectionModel extends SelectionModel {
 
         int vertexId = graph.idAt(p);
         List<Integer> path = paths.pathTo(vertexId);
-        PolyLine newSegment = graph.pathToPolyLine(path);
-        selection.addLast(newSegment);
-        findPaths(vertexId);
+//        System.out.println("Vertex ID: " + vertexId + " | Path size: " + (path != null ? path.size() : "null"));
+
+        if (path != null && !path.isEmpty()) {
+            PolyLine newSegment = graph.pathToPolyLine(path);
+            selection.addLast(newSegment);
+            findPaths(vertexId);
+        } else {
+            System.out.println("No path or empty path found");
+        }
 
     }
 
@@ -252,6 +258,7 @@ public class ScissorsSelectionModel extends SelectionModel {
      */
     @Override
     public PolyLine liveWire(Point p) {
+
         // TODO A6.2a: Implement this method as specified.  Your implementation will probably
         //  involve the following steps:
         //  1. Look up the vertex ID associated with `p`.
@@ -259,10 +266,14 @@ public class ScissorsSelectionModel extends SelectionModel {
         //  3. Convert that path from a sequence of vertices to a `PolyLine`
         //  Hint: The `ImageGraph` class provides methods that might help with steps 1 and 3.
 
+
         int vertexId = graph.idAt(p);
-
-
         List<Integer> path = paths.pathTo(vertexId);
+
+        if (path == null || path.isEmpty()) {
+            return null;
+        }
+
         return graph.pathToPolyLine(path);
 
 
@@ -360,6 +371,7 @@ public class ScissorsSelectionModel extends SelectionModel {
                 int vertexCount = pathfinder.vertexCount();
                 int progress = (int) ((double) settledCount / vertexCount * 100);
                 setProgress(progress);
+//                System.out.println("Progress: " + progress + "% | Settled count: " + settledCount + " | Vertex count: " + vertexCount);
                 publish(snapshot); // publish to send the snapshot to the process method
             }
             return pathfinder.extendSearch(0);

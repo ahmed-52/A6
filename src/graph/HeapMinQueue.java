@@ -113,8 +113,26 @@ public class HeapMinQueue<KeyType> implements MinQueue<KeyType> {
      */
     @Override
     public KeyType remove() {
-        // TODO A6.3c: Implement this method as specified
-        throw new UnsupportedOperationException();  // Replace this line
+        if (heap.isEmpty()) {
+            throw new NoSuchElementException("HeapMinQueue is empty");
+            }
+
+        assert checkInvariant();
+        // Save the root element to return later
+        KeyType root = heap.getFirst().key();
+
+        // Move the last element in the heap to the root
+        int lastIndex = heap.size() - 1;
+        swap(0, lastIndex);
+        heap.remove(lastIndex);
+        index.remove(root);
+
+        // "Bubble down" the new root element to its correct position in the heap
+        if (!heap.isEmpty()) {
+            bubbleDown(0);
+        }
+
+        return root;
     }
 
     /**
@@ -135,6 +153,15 @@ public class HeapMinQueue<KeyType> implements MinQueue<KeyType> {
         assert i >= 0 && i < heap.size();
         assert j >= 0 && j < heap.size();
 
+        Entry<KeyType> temp = heap.get(i);
+        heap.set(i, heap.get(j));
+        heap.set(j, temp);
+
+
+        index.put(heap.get(i).key(), i);
+        index.put(heap.get(j).key(), j);
+
+
         // TODO A6.3a: Implement this method as specified
     }
 
@@ -148,6 +175,18 @@ public class HeapMinQueue<KeyType> implements MinQueue<KeyType> {
         // TODO A6.3d: Implement this method as specified
 
         assert checkInvariant();
+
+        Entry<KeyType> entry = new Entry<>(key, priority);
+
+
+
+        heap.add(entry);
+
+        int CurrIndex = heap.size() - 1;
+
+
+        index.put(key, CurrIndex);
+        bubbleUp(CurrIndex);
     }
 
     /**
@@ -160,8 +199,63 @@ public class HeapMinQueue<KeyType> implements MinQueue<KeyType> {
         // TODO A6.3e: Implement this method as specified
 
         assert checkInvariant();
+
+        int currIndex = index.get(key);
+        int pastPriority = heap.get(currIndex).priority;
+
+        heap.set(currIndex, new Entry<>(key, priority));
+
+        if (priority <= pastPriority) {
+            bubbleUp(currIndex);
+        } else {
+
+
+            bubbleDown(currIndex);
+        }
     }
 
     // TODO A6.3b: Implement private helper methods for bubbling entries up and down in the heap.
     //  Their interfaces are up to you, but you must write precise specifications.
+
+    /**
+     * Bubble up the element at index `i` in the heap.
+     */
+    private void bubbleUp(int i) {
+        while (i > 0) {
+            int parentIndex = (i - 1) / 2;
+            if (heap.get(i).priority() >= heap.get(parentIndex).priority()) {
+                break;
+            }
+            swap(i, parentIndex);
+            i = parentIndex;
+        }
+    }
+
+
+
+    /**
+     * Bubble down the element at index `i` in the heap.
+     */
+    private void bubbleDown(int i) {
+        int leftChild;
+        int rightChild;
+        int minChild;
+        int size = heap.size();
+
+        while ((leftChild = 2 * i + 1) < size) {
+            minChild = leftChild;
+            if ( (rightChild = leftChild + 1) < size && heap.get(rightChild).priority()
+                    < heap.get(leftChild).priority()) {
+                minChild = rightChild;
+            }
+            if (heap.get(i).priority() <= heap.get(minChild).priority()) {
+                break;
+            }
+            swap(i, minChild);
+            i = minChild;
+        }
+    }
+
+
+
 }
