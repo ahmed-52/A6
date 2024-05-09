@@ -20,8 +20,9 @@ public class ScissorsWeights {
     static Weigher<ImageEdge> makeWeigher(String weightName, ImageGraph graph) {
         return switch (weightName) {
             case "CrossGradMono" -> new CrossGradMonoWeight(graph);
-            // TODO A6.4b: Create a new instance of your custom weigher when its name is provided
+            case "ColorAware" -> new ColorAwareWeight(graph);
             default -> throw new IllegalArgumentException("Unknown weigher: " + weightName);
+            // TODO A6.4b: Create a new instance of your custom weigher when its name is provided
         };
     }
 
@@ -31,7 +32,7 @@ public class ScissorsWeights {
     static Iterable<String> weightNames() {
         // TODO A6.4c: Add your weigher's name to this list.  If you add a bunch of weighers, you
         //  might find this method useful when populating your app's combo box.
-        return List.of("CrossGradMono");
+        return List.of("CrossGradMono", "ColorAware");
     }
 
     /**
@@ -138,4 +139,33 @@ public class ScissorsWeights {
     //  2. Weights must be non-negative.
     //  3. Must work better than "CrossGradMono" on images with different colors of similar
     //     brightness (like challenge_1.png).
+    static class ColorAwareWeight implements Weigher<ImageEdge> {
+        private ImageGraph graph;
+        private Raster raster;
+
+        public ColorAwareWeight(ImageGraph graph) {
+            this.graph = graph;
+            this.raster = graph.raster();
+        }
+
+        @Override
+        public int weight(ImageEdge edge) {
+            ImageVertex src = graph.getVertex(edge.startId());
+            int x = src.x();
+            int y = src.y();
+            int maxGradient = 0;
+
+            for (int b = 0; b < raster.getNumBands(); b++) {
+                int localGradient = crossGrad(raster, x, y, b, edge.dir());
+                if (localGradient > maxGradient) {
+                    maxGradient = localGradient;
+                }
+            }
+
+            int edgeWeight = 255 - maxGradient; // Ensuring the weight is non-negative
+            return Math.max(0, edgeWeight); // Further ensure the weight cannot be negative
+        }
+    }
+
+
 }

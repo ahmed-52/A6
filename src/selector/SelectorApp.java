@@ -166,7 +166,7 @@ public class SelectorApp implements PropertyChangeListener {
         String option2 = "Intelligent scissors: gray";
         String option3 = "Intelligent scissors: color";
 
-        String[] options = {option1,option2};
+        String[] options = {option1,option2,option3};
 
         JComboBox<String> dropDown = new JComboBox<>(options);
 
@@ -185,18 +185,6 @@ public class SelectorApp implements PropertyChangeListener {
 
 
 
-        // TODO A6.0a: Add a widget to your control panel allowing the user to choose which
-        //  selection model to use.  We recommend using a `JComboBox` [1].  To start with, the user
-        //  should be able to choose between the following options:
-        //  1. Point-to-point (`PointToPointSelectionModel`).
-        //  2. Intelligent scissors: gray (`ScissorsSelectionModel` with a "CrossGradMono" weight
-        //     name).  You will need to `import scissors.ScissorsSelectionModel` to use this class.
-        //  When an item is selected, you should construct a new `SelectionModel` of the appropriate
-        //  class, passing the previous `model` object to the constructor so that any existing
-        //  selection is preserved.  Then you should call `setSelectionModel()` with your new model
-        //  object.
-        //  [1] https://docs.oracle.com/javase/tutorial/uiswing/components/combobox.html
-
 
 
         dropDown.addActionListener(e -> {
@@ -209,7 +197,12 @@ public class SelectorApp implements PropertyChangeListener {
                 setSelectionModel(newModel);
             } else if (selectedOption.equals(option2)) {
                 SelectionModel newModel = new ScissorsSelectionModel("CrossGradMono",model);
-                setSelectionModel(newModel);}
+                setSelectionModel(newModel);
+            } else if (selectedOption.equals(option3)) {
+                SelectionModel newModel = new ScissorsSelectionModel("ColorAware", model);
+                setSelectionModel(newModel);
+            }
+
 
         });
 
