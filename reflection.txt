@@ -2,10 +2,10 @@
 
 ## Submitter metadata
 
-Partner 1: Firstname Lastname (NetID)  - TODO
-Partner 2: Firstname Lastname (NetID)  - delete if working solo
+Partner 1: Firstname Lastname (NetID)  - AAA384
+Partner 2: Firstname Lastname (NetID)  - FMI4
 
-Hours spent working on this assignment: 0.0  - TODO
+Hours spent working on this assignment: 20
 
 ## Verification questions
 
@@ -13,7 +13,7 @@ Hours spent working on this assignment: 0.0  - TODO
    image when using your `HeapMinQueue` vs. the `RefMinQueue`?  (with assertions
    disabled)
 
-   Answer: TODO
+   Answer: HeapMinQueue is about 4 times faster than RefMinQueue.
 
 ## Reflection questions
 
@@ -22,13 +22,19 @@ Hours spent working on this assignment: 0.0  - TODO
    selection model?  What do you think would be a good technique to help
    developers avoid assuming things beyond what's specified in an interface?
 
-   Answer: TODO
+   Answer: I did not make any assumptions specific to point-to-point selections in A5. We can
+   avoid assuming things beyond what's specified in an interface by carefully reading the
+   interface documentation and ensuring that our implementation adheres to the interface
+   requirements.
 
 2. Describe your custom weigher(s) and what inspired you to do the calculations
    that you did.
 
-   Answer: TODO
+   Answer: In the ColorWeight implementation, I analyzed gradients across each color band of
+    the image to determine the maximum gradient, reflecting significant changes in any color
+    channel. This method effectively captures edges in images with distinct color differences but
+    similar brightness levels, enhancing the segmentation accuracy for colored images.
 
 3. What is your favorite thing you learned or accomplished in CS 2110?
 
-   Answer: TODO
+   Answer: Heaps and priority queues.

@@ -20,7 +20,7 @@ public class ScissorsWeights {
     static Weigher<ImageEdge> makeWeigher(String weightName, ImageGraph graph) {
         return switch (weightName) {
             case "CrossGradMono" -> new CrossGradMonoWeight(graph);
-            case "ColorAware" -> new ColorAwareWeight(graph);
+            case "ColorAware" -> new ColorWeight(graph);
             default -> throw new IllegalArgumentException("Unknown weigher: " + weightName);
             // TODO A6.4b: Create a new instance of your custom weigher when its name is provided
         };
@@ -139,11 +139,11 @@ public class ScissorsWeights {
     //  2. Weights must be non-negative.
     //  3. Must work better than "CrossGradMono" on images with different colors of similar
     //     brightness (like challenge_1.png).
-    static class ColorAwareWeight implements Weigher<ImageEdge> {
+    static class ColorWeight implements Weigher<ImageEdge> {
         private ImageGraph graph;
         private Raster raster;
 
-        public ColorAwareWeight(ImageGraph graph) {
+        public ColorWeight(ImageGraph graph) {
             this.graph = graph;
             this.raster = graph.raster();
         }
